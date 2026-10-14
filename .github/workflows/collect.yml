@@ -1,0 +1,29 @@
+name: Collect weather and market snapshots
+on:
+  push:
+    branches: [main]
+    paths: ['scripts/collect.py', '.github/workflows/collect.yml']
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+permissions:
+  contents: read
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Capture public weather, rules, series fee metadata, and order books
+        run: python scripts/collect.py
+      - name: Retain independent timestamped snapshots, including source failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weather-market-snapshots-${{ github.run_id }}-${{ github.run_attempt }}
+          path: data/snapshots.sqlite
+          retention-days: 90
+          if-no-files-found: error
