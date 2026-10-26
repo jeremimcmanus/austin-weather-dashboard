@@ -9,6 +9,7 @@ import sys
 import threading
 import time
 from collect import collect
+from backup import backup
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -36,11 +37,24 @@ def main():
             state.update(state='collecting', lastAttemptAt=dt.datetime.now(dt.timezone.utc).isoformat())
             try:
                 write_status(status_path, state)
+                # Before collection writes: back up existing history on startup, then daily.
+                try:
+                    state['backup'] = backup(directory)
+                    state.pop('backupError', None)
+                except Exception as exc:
+                    state['backupError'] = type(exc).__name__
                 failures = collect(str(directory/'snapshots.sqlite'))
+                if state.get('backup') is None:
+                    try:
+                        state['backup'] = backup(directory)
+                        state.pop('backupError', None)
+                    except Exception as exc:
+                        state['backupError'] = type(exc).__name__
                 ended = dt.datetime.now(dt.timezone.utc).isoformat()
                 state.update(state='degraded' if failures else 'healthy', failedSources=failures, lastFinishedAt=ended)
                 if not failures:
                     state['lastSuccessAt'] = ended
+                state.pop('errorType', None)
             except Exception as exc:
                 state.update(state='error', errorType=type(exc).__name__)
             try:

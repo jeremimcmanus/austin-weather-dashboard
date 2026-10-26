@@ -7,11 +7,23 @@ import re
 import sqlite3
 import subprocess
 import sys
+import tempfile
 from zoneinfo import ZoneInfo
 
+class SourceFetchError(Exception):
+    def __init__(self, curl_code, http_status):
+        self.safe_code = f'curl={curl_code};http={http_status}'
+        super().__init__(self.safe_code)
+
 def fetch(url):
-    result = subprocess.run(['curl', '--fail-with-body', '--silent', '--show-error', '--max-time', '25', '--max-filesize', '5000000', '-H', 'User-Agent: AustinWeatherDashboard/1.0', url], capture_output=True, text=True, check=True)
-    return json.loads(result.stdout)
+    # A file lets curl truncate failed bodies before a retry; stdout holds only status.
+    with tempfile.TemporaryDirectory() as directory:
+        output = pathlib.Path(directory)/'response.json'
+        result = subprocess.run(['curl', '--fail-with-body', '--silent', '--show-error', '--max-time', '25', '--retry', '2', '--retry-max-time', '30', '--retry-delay', '1', '--write-out', '%{http_code}', '--output', str(output), '--max-filesize', '5000000', '-H', 'User-Agent: AustinWeatherDashboard/1.0', url], capture_output=True, text=True)
+        status = result.stdout.strip()
+        if result.returncode:
+            raise SourceFetchError(result.returncode, status if status.isdigit() else 'unknown')
+        return json.loads(output.read_text())
 
 def collect(path, get=fetch):
     pathlib.Path(path).parent.mkdir(parents=True, exist_ok=True)
@@ -27,8 +39,8 @@ def collect(path, get=fetch):
         try:
             data = get(url)
         except Exception as exc:
-            # Store only exception class; upstream output may include sensitive proxy details.
-            error = type(exc).__name__
+            # Store only safe numeric diagnostics; never proxy details or raw response text.
+            error = type(exc).__name__+(':'+exc.safe_code if isinstance(exc, SourceFetchError) else '')
             failures.append(source)
         db.execute('INSERT INTO snapshots(run_at,received_at,source,url,payload,error) VALUES(?,?,?,?,?,?)', (run, dt.datetime.now(dt.timezone.utc).isoformat(), source, url, json.dumps(data) if data is not None else None, error))
         db.commit()

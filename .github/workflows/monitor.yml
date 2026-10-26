@@ -1,0 +1,36 @@
+name: Monitor collector and retain verified backups
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '37 * * * *'
+    - cron: '47 8 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: dashboard-monitor
+  cancel-in-progress: false
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check collector, disk capacity, and backup freshness
+        run: python scripts/monitor.py
+      - name: Download checksum-verified off-site backup
+        id: backup
+        if: always() && (github.event_name == 'workflow_dispatch' || github.event.schedule == '47 8 * * *')
+        run: python scripts/monitor.py --backup-dir backups
+      - name: Retain verified off-site backup for seven days
+        if: always() && steps.backup.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: verified-database-backup-${{ github.run_id }}
+          path: |
+            backups/snapshots.sqlite.gz
+            backups/manifest.json
+          retention-days: 7
+          if-no-files-found: error

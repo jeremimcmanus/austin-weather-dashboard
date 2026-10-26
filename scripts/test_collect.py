@@ -4,10 +4,25 @@ import pathlib
 import sqlite3
 import tempfile
 import unittest
+from unittest.mock import patch
+import subprocess
 spec = importlib.util.spec_from_file_location('collect', pathlib.Path(__file__).with_name('collect.py'))
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 class CollectorTests(unittest.TestCase):
+    def test_fetch_records_safe_http_diagnostics(self):
+        with patch.object(module.subprocess,'run',return_value=subprocess.CompletedProcess([],22,stdout='503',stderr='untrusted upstream details')):
+            with self.assertRaises(module.SourceFetchError) as caught:module.fetch('https://api.weather.gov/example')
+            self.assertEqual(caught.exception.safe_code,'curl=22;http=503')
+            self.assertNotIn('untrusted',str(caught.exception))
+
+    def test_fetch_parses_only_final_output_file(self):
+        def fake(args, **kwargs):
+            pathlib.Path(args[args.index('--output')+1]).write_text('{"ok": true}')
+            return subprocess.CompletedProcess(args,0,stdout='200',stderr='')
+        with patch.object(module.subprocess,'run',side_effect=fake):
+            self.assertEqual(module.fetch('https://api.weather.gov/example'),{'ok':True})
+
     def test_snapshots_append_and_capture_orderbooks(self):
         def fake(url):
             if '/points/' in url:

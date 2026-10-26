@@ -1,5 +1,6 @@
 import http from 'node:http';
 import {readFile} from 'node:fs/promises';
+import {createReadStream} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {join} from 'node:path';
 import {execFile} from 'node:child_process';
@@ -35,6 +36,14 @@ export function createServer(){return http.createServer(async(req,res)=>{
  const path=new URL(req.url,'http://localhost').pathname;
  res.setHeader('X-Content-Type-Options','nosniff');
  if(path==='/healthz'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify({status:'ok',tradingEnabled:false}));return;}
+ if(path==='/api/backup/latest'){
+ const directory=process.env.DATA_DIR||fileURLToPath(new URL('./data/',import.meta.url));
+ try{const meta=JSON.parse(await readFile(join(directory,'backups','latest.json'),'utf8'));
+ if(!/^snapshots-[0-9TZ]+\.sqlite\.gz$/.test(meta.file))throw Error('Invalid backup');
+ const stream=createReadStream(join(directory,'backups',meta.file));
+ stream.on('error',()=>{if(!res.headersSent){res.statusCode=503;res.end('Backup unavailable');}else res.destroy();});
+ res.setHeader('Content-Type','application/gzip');res.setHeader('Content-Disposition','attachment; filename="'+meta.file+'"');res.setHeader('Cache-Control','no-store');stream.pipe(res);
+ }catch{res.statusCode=503;res.end('Verified backup not yet available');}return;}
  if(path==='/api/history'){res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');try{const {stdout}=await exec('python3',[fileURLToPath(new URL('./scripts/history_status.py',import.meta.url))],{timeout:15000,maxBuffer:100000});res.end(stdout);}catch{res.statusCode=503;res.end(JSON.stringify({error:'History status unavailable'}));}return;}
  if(path==='/api/weather'||path==='/api/markets'||path==='/api/series'||path.startsWith('/api/orderbook/')){
  res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');

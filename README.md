@@ -82,3 +82,5 @@ The dashboard includes the supplied October 7–8 cases and their rejection reas
 ## Permanent deployment
 
 A paid Render service with a persistent disk is configured in `render.yaml`; see [deployment and verification instructions](docs/deployment.md). The production supervisor collects every 15 minutes regardless of visits and reports health/history in the dashboard. Deployment still requires account authorization and approval of the service/disk charges. Local tests and a Git push do not establish a public deployment. Keep all unverified recommendation gates closed.
+
+Operational backups and alerts: `/api/history` reports grouped errors and the verified daily backup; `/api/backup/latest` downloads the public-source archive. The hourly GitHub monitor checks collection and disk health, with daily checksum-verified off-site backups retained for seven days. Notification delivery depends on GitHub account settings. See the deployment guide for limits, restore instructions, and archive privacy scope.
