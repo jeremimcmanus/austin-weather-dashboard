@@ -25,6 +25,7 @@ class CollectorTests(unittest.TestCase):
 
     def test_snapshots_append_and_capture_orderbooks(self):
         def fake(url):
+            if 'weather.com/' in url:return {'results': []}
             if '/points/' in url:
                 return {'properties': {'forecastHourly': 'https://api.weather.gov/hourly'}}
             if '/markets?' in url:
@@ -35,7 +36,7 @@ class CollectorTests(unittest.TestCase):
             self.assertEqual(module.collect(path, fake), [])
             self.assertEqual(module.collect(path, fake), [])
             with sqlite3.connect(path) as db:
-                self.assertEqual(db.execute('SELECT COUNT(*) FROM snapshots').fetchone()[0], 28)
+                self.assertEqual(db.execute('SELECT COUNT(*) FROM snapshots').fetchone()[0], 44)
                 self.assertEqual(db.execute("SELECT COUNT(*) FROM snapshots WHERE source='kalshi.orderbook'").fetchone()[0], 2)
     def test_partial_failures_are_recorded(self):
         def fail(url):

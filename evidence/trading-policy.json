@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "automaticTrading": false,
+  "documents": {
+    "terms": {
+      "url": "https://assets.kalshi.com/contract_terms/GLOBALTEMPERATURE.pdf",
+      "sha256": "4aac5fc919167599c021d295cca97e82e5f3d6f7c0a11de977bea3348f190d91"
+    },
+    "fees": {
+      "url": "https://kalshi.com/docs/kalshi-fee-schedule.pdf",
+      "sha256": "c326a69f596a11e8f8be2620402d39a8d4823920c21cc97c93a114d862699601"
+    },
+    "station": {
+      "url": "https://weather.com/kalshi/api/climate/primary?date=2026-10-25",
+      "sha256": "d3d75187bcd0009ee845da673187cf42c2816c0da1eb053115630cf4b291c1e5"
+    },
+    "feeRounding": {
+      "url": "https://docs.kalshi.com/getting_started/fee_rounding.md",
+      "sha256": "40504be2568a9ae740938e0d3384e13d2867d2ce95766e7b8978525bae22ec27"
+    },
+    "fixedPoint": {
+      "url": "https://docs.kalshi.com/getting_started/fixed_point_migration.md",
+      "sha256": "02602fc3e97e8dcf1f3b1a026e41579b5e6fd1f706b7f6eeac4375be837d687d"
+    }
+  },
+  "settlement": {
+    "source": "The Weather Company",
+    "reviewedAt": "2026-10-26T21:05:52.631336+00:00",
+    "validUntil": "2026-11-25T21:05:52.631336+00:00",
+    "contractRuleHashes": {
+      "KXHIGHAUS-26OCT27-T87": "cde9c40be5d008d49e84e51791a2de24f27cb8ac6d6adac13d3ece1d217c86ba",
+      "KXHIGHAUS-26OCT27-T80": "3b158f9b9290e919010871c431925a9e48aa20d3a5ab2dc2b52be8c2f91a992d",
+      "KXHIGHAUS-26OCT27-B86.5": "dedc3364c4621ad873d705d124c15503704e23b1e421a526efe68d3c034dfc6e",
+      "KXHIGHAUS-26OCT27-B84.5": "6dd01b4ab8e75b33fcbd320c35fa8ced54b0519f22e26d214547caad582d3f96",
+      "KXHIGHAUS-26OCT27-B82.5": "ac5c7d349161cdbb346c350edb6c44ad6d9331a5185b6385b23907728180efd0",
+      "KXHIGHAUS-26OCT27-B80.5": "8856fbd7c6c146160fe4e05a51cccbebc86e9e7c8ed3c5d1157d8f5a302c4b90",
+      "KXHIGHAUS-26OCT26-T88": "67dafb53dbf257fbc13d9d97a2a11de0e3a0ca62186e86d3eaaf3f17054da02e",
+      "KXHIGHAUS-26OCT26-T81": "3414f6c8654e9703d5d123d8686a1d1ec2a50c85d0d6e1e74c4a93da05ff38ee",
+      "KXHIGHAUS-26OCT26-B87.5": "3cd05104cbd2c1256917e4405aa92bfc567176ba416c46eff9f0770e1769d85d",
+      "KXHIGHAUS-26OCT26-B85.5": "d2b67daa4718896f253046b1f993a11e869d0614d8f7bf1d5e1e8f718e15cd18",
+      "KXHIGHAUS-26OCT26-B83.5": "9f2563935bee5ba8d56e80253848ac7b8e8c8c982e327ca0e179dd24b4e10ab9",
+      "KXHIGHAUS-26OCT26-B81.5": "390b4d5e71f12496d84ec8f272248c5cb61c9c9ca71f3aba7246b9de1a419a82"
+    },
+    "stationMapping": {
+      "value": {
+        "forecastStation": "KAUS",
+        "settlementStation": "CLIAUS"
+      },
+      "document": "station",
+      "quote": "station.city=Austin; station.icao=KAUS; station.cliId=AUS. Contract API names Austin (CLIAUS)."
+    },
+    "measurementWindow": {
+      "value": null,
+      "quote": null
+    },
+    "rounding": {
+      "value": "source_reported_precision_no_extra_rounding",
+      "document": "terms",
+      "quote": "Contract resolution is based on the full precision reported by the Source Agency. Rounding by media outlets, secondary reporting, or third-party summaries does not affect resolution."
+    },
+    "revisions": {
+      "value": {
+        "firstNonPreliminary": true,
+        "materialErrorRevisionPossible": true,
+        "postExpirationRevisionsIgnored": true,
+        "noDataFallback": "exchange_last_fair_price"
+      },
+      "document": "terms",
+      "quote": "Only the first official non-preliminary report ... Revisions after the Expiration Date are not included ... If no data is available ... resolve to the last fair price; contract API permits material-error revision handling."
+    },
+    "ruleTemplate": {
+      "version": "austin_full_precision_v1",
+      "secondarySha256": "c1f11eaf372267f2e69ca8ba131916928052ec5e92138e45c16e197f2d4bb507",
+      "reviewed": "Exact primary grammar binds Austin/CLIAUS, date, operator, strike and source; secondary text must match this fingerprint. Any change blocks approval.",
+      "earlyCloseSha256": "e99dd58a7d6bfc0615f2a94acfb3a5aa8ae338c422aeb4175c28402717d50b9e"
+    }
+  },
+  "fees": {
+    "reviewedAt": "2026-10-26T21:05:52.631336+00:00",
+    "effectiveFrom": "2026-07-07T00:00:00+00:00",
+    "effectiveUntil": "2026-11-02T21:05:52.631336+00:00",
+    "series": "KXHIGHAUS",
+    "feeType": "quadratic",
+    "multiplier": 1,
+    "takerCoefficient": "0.07",
+    "rounding": "documented_per_fill_accumulator",
+    "quote": "Direct member balances align to $0.0001; non-direct balances to $0.01. Trade fees ceil to $0.000001 per fill; rounding fees and capped rebates accumulate per order. Quantity granularity is 0.01 contracts. Fee estimates use a conservative no-rebate maximum-fragmentation upper bound, not a claimed realized fee.",
+    "accountScope": "Direct exchange taker fees only; broker, funding and early-exit fees excluded",
+    "accountType": null,
+    "minimumFillQuantity": "0.01",
+    "tradeFeePrecisionDollars": "0.000001"
+  },
+  "risk": {
+    "minimumEdgeCents": 2,
+    "extraExecutionCents": 2,
+    "maxBookAgeSeconds": 60
+  }
+}

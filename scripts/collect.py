@@ -1,5 +1,6 @@
 """Append immutable public-source snapshots to SQLite. Python standard library + curl."""
 import argparse
+import hashlib
 import datetime as dt
 import json
 import pathlib
@@ -31,13 +32,16 @@ def collect(path, get=fetch):
     db.execute("PRAGMA journal_mode=WAL")
     db.execute("PRAGMA busy_timeout=30000")
     db.execute('CREATE TABLE IF NOT EXISTS snapshots (id INTEGER PRIMARY KEY, run_at TEXT NOT NULL, received_at TEXT NOT NULL, source TEXT NOT NULL, url TEXT NOT NULL, payload TEXT, error TEXT)')
+    db.execute('CREATE INDEX IF NOT EXISTS snapshots_source_id ON snapshots(source,id)')
     run = dt.datetime.now(dt.timezone.utc).isoformat()
     failures = []
-    def capture(source, url):
+    def capture(source, url, transform=None):
         data = None
         error = None
         try:
             data = get(url)
+            if transform:
+                data = transform(data)
         except Exception as exc:
             # Store only safe numeric diagnostics; never proxy details or raw response text.
             error = type(exc).__name__+(':'+exc.safe_code if isinstance(exc, SourceFetchError) else '')
@@ -58,6 +62,8 @@ def collect(path, get=fetch):
             if re.fullmatch(r'[a-fA-F0-9-]+', identifier):
                 capture('nws.cli.report', 'https://api.weather.gov/products/' + identifier)
         capture('kalshi.series', 'https://api.elections.kalshi.com/trade-api/v2/series/KXHIGHAUS')
+        capture('kalshi.series_fees', 'https://api.elections.kalshi.com/trade-api/v2/series/fee_changes?series_ticker=KXHIGHAUS&show_historical=true')
+        open_events = set()
         cursor = ''
         for page in range(10):
             from urllib.parse import quote
@@ -65,6 +71,8 @@ def collect(path, get=fetch):
             response = capture('kalshi.markets', url)
             for market in (response or {}).get('markets', []):
                 ticker = market.get('ticker', '')
+                event = market.get('event_ticker', '')
+                if re.fullmatch(r'KXHIGHAUS-[0-9]{2}[A-Z]{3}[0-9]{2}', event):open_events.add(event)
                 if re.fullmatch(r'KXHIGHAUS-[A-Za-z0-9.-]+', ticker):
                     capture('kalshi.orderbook', 'https://api.elections.kalshi.com/trade-api/v2/markets/' + ticker + '/orderbook?depth=100')
             cursor = (response or {}).get('cursor')
@@ -72,12 +80,18 @@ def collect(path, get=fetch):
                 break
         else:
             failures.append('kalshi.pagination_limit')
+        for event in sorted(open_events):
+            capture('kalshi.event_fees', 'https://api.elections.kalshi.com/trade-api/v2/events/fee_changes?event_ticker='+event+'&limit=100')
         # Revisit recently closed events to archive exchange results and later revisions.
         today = dt.datetime.now(ZoneInfo('America/Chicago')).date()
         for offset in range(1, 8):
             day = today-dt.timedelta(days=offset)
             months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
             event = f'KXHIGHAUS-{day.year % 100:02d}{months[day.month-1]}{day.day:02d}'
+            def austin_only(response):
+                if not isinstance(response.get('results'),list):raise ValueError('Malformed official climate response')
+                return {'date':response.get('date'),'source':response.get('source'),'results':[item for item in response['results'] if item.get('station',{}).get('icao')=='KAUS'],'responseCanonicalSha256':hashlib.sha256(json.dumps(response,sort_keys=True,separators=(',',':')).encode()).hexdigest(),'fullResponseArchived':False}
+            capture('twc.daily', 'https://weather.com/kalshi/api/climate/primary?date='+day.isoformat(), austin_only)
             capture('kalshi.recent_event', 'https://api.elections.kalshi.com/trade-api/v2/markets?event_ticker='+event+'&limit=100')
     finally:
         db.close()

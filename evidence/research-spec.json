@@ -1,0 +1,39 @@
+{
+  "version": "austin-daily-high-research-v1",
+  "mode": "RESEARCH_ONLY_UNTIL_VALIDATED",
+  "forecastStation": "KAUS",
+  "assumedSettlementStation": "CLIAUS",
+  "assumedTimezone": "America/Chicago",
+  "assumedWindow": "civil_midnight_to_midnight",
+  "assumedRounding": "source_reported_precision_no_extra_rounding",
+  "minimumLeadHours": 6,
+  "maxForecastAgeMinutes": 120,
+  "priorBiasF": 0,
+  "priorSigmaF": 4,
+  "temperatureStressF": [
+    -2,
+    0,
+    2
+  ],
+  "sigmaMultipliers": [
+    0.75,
+    1,
+    1.5
+  ],
+  "minimumTrainingDays": 60,
+  "holdoutDays": 30,
+  "bootstrapReplicates": 1000,
+  "bootstrapSeed": 452,
+  "maximumCalibrationError": 0.05,
+  "minimumEdgeCents": 2,
+  "extraExecutionCents": 2,
+  "selection": "at_most_one_position_per_event_day_maximum_stressed_edge_ties_ticker_then_side",
+  "evaluation": "first_30_calendar_event_days_from_first_eligible_prediction_no_missing_days_no_scores_before_window_complete_no_retuning",
+  "calibrationMarginProbability": 0.05,
+  "sourceValueQuantumF": 1,
+  "sourceQuantumStressF": [
+    0.1,
+    1
+  ],
+  "supportAssumption": "Discrete Gaussian on source-reported Fahrenheit; 1F support is a research assumption, never a rule that rounds reported source values"
+}

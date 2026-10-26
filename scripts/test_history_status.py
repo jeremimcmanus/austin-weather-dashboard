@@ -15,6 +15,7 @@ class HistoryTests(unittest.TestCase):
             self.assertEqual(status['snapshots'],0)
     def test_persisted_history_and_deduplicated_observations(self):
         def fake(url):
+            if 'weather.com/' in url:return {'results': []}
             if '/points/' in url:return {'properties':{'forecastHourly':'https://api.weather.gov/hourly'}}
             if '/observations/' in url:return {'properties':{'timestamp':'2026-10-14T15:00:00Z','temperature':{'value':30}}}
             return {}

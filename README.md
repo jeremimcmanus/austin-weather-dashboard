@@ -16,7 +16,7 @@ npm test
 
 The server binds port 3000 (override with `PORT`). Open it through your development environment's supported application access. Select **Illustrative demo** to explore the interface without upstream access. The default is live mode; source failures are visible and never silently replaced with sample data. Refresh manually for new quotes.
 
-Required outbound HTTPS hosts: `api.weather.gov` and `api.elections.kalshi.com`. The backend uses curl so cloud HTTPS proxy configuration is honored. No dependency installation is needed.
+Runtime outbound HTTPS hosts: `api.weather.gov`, `api.elections.kalshi.com`, and `weather.com`. Official-document refreshes additionally use `assets.kalshi.com`, `kalshi.com`, and `docs.kalshi.com`. The backend uses curl so cloud HTTPS proxy configuration is honored. No dependency installation is needed.
 
 ## Design decisions and limits
 
@@ -41,9 +41,9 @@ python3 -m unittest discover -s scripts -p 'test_*.py'
 
 `.github/workflows/collect.yml` runs this independently of dashboard visitors hourly **once committed/pushed to the default branch and GitHub Actions is enabled**. Each run uploads a separate SQLite snapshot artifact with up to 90 days retention. Scheduling may be delayed, free allowances apply, and GitHub can disable inactive scheduled workflows. This is a practical starter archive, not permanent cloud storage or an availability guarantee. Download artifacts before expiration or move the same collector to a managed scheduler with durable object storage for long-term research. No workflow has been deployed by this local build. Local `data/` is ignored by Git.
 
-**Live-source finding:** current `KXHIGHAUS` market rules and series metadata name **The Weather Company**, with `https://weather.com/kalshi` as the source. They reference Austin (CLIAUS). The dashboard displays the exchange-declared source and full per-contract API rules. The Weather Company outcome feed, contract PDF, station mapping, revision policy, and reporting-window interpretation have not been independently certified. NWS CLI reports are retained only as comparison evidence. Never use them as an automatic substitute for the declared source.
+**Live-source finding:** current `KXHIGHAUS` market rules and series metadata name **The Weather Company**, with `https://weather.com/kalshi` as the source. They reference Austin (CLIAUS). The dashboard displays the exchange-declared source and full per-contract API rules. The official terms and Weather Company portal have now been archived and reviewed: station mapping, source precision, and revision rules have evidence. The domestic measurement window remains unverified; see the trading-validation guide for the exact remaining limitations. NWS CLI reports are retained only as comparison evidence. Never use them as an automatic substitute for the declared source.
 
-The liquidity inspector derives YES asks from NO bids, walks visible depth for the requested quantity, and refuses a full fill estimate when depth is insufficient. It accepts a **user-verified total fee**, rather than inventing the current exchange fee formula. Series fee type and multiplier are displayed separately. The live series currently reports `quadratic` and multiplier `1`; this alone is insufficient to verify the complete schedule.
+The legacy liquidity inspector derives YES asks from NO bids and accepts an explicitly user-supplied fee scenario. The new server-side validation desk supports YES/NO, verifies the public rate and rounding mechanics, checks series/event fee overrides, and calculates maximum-fragmentation fee bounds. User-entered numbers do not satisfy its evidence gates. Series fee type and multiplier are displayed separately. The live series currently reports `quadratic` and multiplier `1`; this alone is insufficient to verify the complete schedule.
 
 ## Holdout evaluation
 
@@ -84,3 +84,9 @@ The dashboard includes the supplied October 7–8 cases and their rejection reas
 A paid Render service with a persistent disk is configured in `render.yaml`; see [deployment and verification instructions](docs/deployment.md). The production supervisor collects every 15 minutes regardless of visits and reports health/history in the dashboard. Deployment still requires account authorization and approval of the service/disk charges. Local tests and a Git push do not establish a public deployment. Keep all unverified recommendation gates closed.
 
 Operational backups and alerts: `/api/history` reports grouped errors and the verified daily backup; `/api/backup/latest` downloads the public-source archive. The hourly GitHub monitor checks collection and disk health, with daily checksum-verified off-site backups retained for seven days. Notification delivery depends on GitHub account settings. See the deployment guide for limits, restore instructions, and archive privacy scope.
+
+## Trading-validation pipeline
+
+The new validation desk separates verified station/source facts from unresolved reporting windows and account-specific fee scope. It obtains quantity-specific YES/NO depth, uses Decimal arithmetic, and cannot substitute manual probabilities or fees for server evidence. Official documents and source receipts are pinned under `evidence/official/`.
+
+The collector archives Austin Weather Company daily records. The research worker logs immutable timestamped future-day probability scenarios and post-prediction quote snapshots, freezes versioned experiments, and locks holdout scores until a complete future window exists. The initial prior is uncalibrated; no real 60-day verified training set or untouched 30-day holdout has yet completed. Positive recommendations remain blocked. See [trading validation details and remaining blockers](docs/trading-validation.md).

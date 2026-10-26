@@ -1,0 +1,61 @@
+{
+  "terms": {
+    "url": "https://assets.kalshi.com/contract_terms/GLOBALTEMPERATURE.pdf",
+    "retrievedAt": "2026-10-26T21:01:55.124419+00:00",
+    "httpStatus": "200",
+    "curlExit": 0,
+    "reviewed": false,
+    "file": "terms.pdf",
+    "sha256": "4aac5fc919167599c021d295cca97e82e5f3d6f7c0a11de977bea3348f190d91",
+    "bytes": 32186,
+    "status": "acquired_not_reviewed"
+  },
+  "fees": {
+    "url": "https://kalshi.com/docs/kalshi-fee-schedule.pdf",
+    "retrievedAt": "2026-10-26T21:01:55.306342+00:00",
+    "httpStatus": "200",
+    "curlExit": 0,
+    "reviewed": false,
+    "file": "fees.pdf",
+    "sha256": "c326a69f596a11e8f8be2620402d39a8d4823920c21cc97c93a114d862699601",
+    "bytes": 281129,
+    "status": "acquired_not_reviewed"
+  },
+  "settlement": {
+    "url": "https://weather.com/kalshi",
+    "retrievedAt": "2026-10-26T21:01:55.482588+00:00",
+    "httpStatus": "200",
+    "curlExit": 0,
+    "reviewed": false,
+    "file": "settlement.html",
+    "sha256": "86bd2899ccb294b8de5d862af08a959eba70257b5f41853cb3b8aa960082a508",
+    "bytes": 26489,
+    "status": "acquired_not_reviewed"
+  },
+  "station": {
+    "url": "https://weather.com/kalshi/api/climate/primary?date=2026-10-25",
+    "file": "station.json",
+    "sha256": "d3d75187bcd0009ee845da673187cf42c2816c0da1eb053115630cf4b291c1e5",
+    "httpStatus": "200",
+    "status": "acquired_not_reviewed",
+    "retrievedAt": "2026-10-26T21:05:52.630948+00:00"
+  },
+  "feeRounding": {
+    "url": "https://docs.kalshi.com/getting_started/fee_rounding.md",
+    "file": "feeRounding.md",
+    "sha256": "40504be2568a9ae740938e0d3384e13d2867d2ce95766e7b8978525bae22ec27",
+    "httpStatus": "200",
+    "curlExit": 0,
+    "status": "acquired_not_reviewed",
+    "retrievedAt": "2026-10-26T21:22:12.120088+00:00"
+  },
+  "fixedPoint": {
+    "url": "https://docs.kalshi.com/getting_started/fixed_point_migration.md",
+    "file": "fixedPoint.md",
+    "sha256": "02602fc3e97e8dcf1f3b1a026e41579b5e6fd1f706b7f6eeac4375be837d687d",
+    "httpStatus": "200",
+    "curlExit": 0,
+    "status": "acquired_not_reviewed",
+    "retrievedAt": "2026-10-26T21:22:12.120220+00:00"
+  }
+}

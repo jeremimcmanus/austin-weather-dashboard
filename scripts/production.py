@@ -10,6 +10,7 @@ import threading
 import time
 from collect import collect
 from backup import backup
+from research import run as research_run
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -50,6 +51,11 @@ def main():
                         state.pop('backupError', None)
                     except Exception as exc:
                         state['backupError'] = type(exc).__name__
+                try:
+                    state['research'] = research_run(directory)
+                    state.pop('researchError', None)
+                except Exception as exc:
+                    state['researchError'] = type(exc).__name__
                 ended = dt.datetime.now(dt.timezone.utc).isoformat()
                 state.update(state='degraded' if failures else 'healthy', failedSources=failures, lastFinishedAt=ended)
                 if not failures:

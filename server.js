@@ -33,7 +33,7 @@ export async function orderbook(ticker,fetcher=upstream) {
  return fetcher('https://api.elections.kalshi.com/trade-api/v2/markets/'+encodeURIComponent(ticker)+'/orderbook?depth=20');
 }
 export function createServer(){return http.createServer(async(req,res)=>{
- const path=new URL(req.url,'http://localhost').pathname;
+ const requestUrl=new URL(req.url,'http://localhost');const path=requestUrl.pathname;
  res.setHeader('X-Content-Type-Options','nosniff');
  if(path==='/healthz'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify({status:'ok',tradingEnabled:false}));return;}
  if(path==='/api/backup/latest'){
@@ -44,6 +44,15 @@ export function createServer(){return http.createServer(async(req,res)=>{
  stream.on('error',()=>{if(!res.headersSent){res.statusCode=503;res.end('Backup unavailable');}else res.destroy();});
  res.setHeader('Content-Type','application/gzip');res.setHeader('Content-Disposition','attachment; filename="'+meta.file+'"');res.setHeader('Cache-Control','no-store');stream.pipe(res);
  }catch{res.statusCode=503;res.end('Verified backup not yet available');}return;}
+ if(path==='/api/research'){
+ res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');try{const directory=process.env.DATA_DIR||fileURLToPath(new URL('./data/',import.meta.url));const {stdout}=await exec('python3',[fileURLToPath(new URL('./scripts/research.py',import.meta.url)),'status','--data-dir',directory],{timeout:20000,maxBuffer:500000});res.end(stdout);}catch{res.statusCode=503;res.end(JSON.stringify({error:'Research ledger unavailable',calibrationVerified:false}));}return;}
+ if(path.startsWith('/api/trading-validation/')){
+ res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');const ticker=path.slice('/api/trading-validation/'.length),side=requestUrl.searchParams.get('side')||'YES',quantity=Number(requestUrl.searchParams.get('quantity')||10);
+ if(!/^KXHIGHAUS-[A-Za-z0-9.-]+$/.test(ticker)||!['YES','NO'].includes(side)||!Number.isInteger(quantity)||quantity<1||quantity>100000){res.statusCode=400;res.end(JSON.stringify({error:'Invalid Austin ticker, side, or integer quantity'}));return;}
+ try{const eventTicker=ticker.split('-').slice(0,2).join('-');const [market,series,book,seriesFees,eventFees,currentWeather]=await Promise.all([upstream('https://api.elections.kalshi.com/trade-api/v2/markets/'+encodeURIComponent(ticker)),upstream('https://api.elections.kalshi.com/trade-api/v2/series/KXHIGHAUS'),upstream('https://api.elections.kalshi.com/trade-api/v2/markets/'+encodeURIComponent(ticker)+'/orderbook?depth=100').then(value=>({value,receivedAt:new Date().toISOString()})),upstream('https://api.elections.kalshi.com/trade-api/v2/series/fee_changes?series_ticker=KXHIGHAUS&show_historical=true').then(value=>({value,receivedAt:new Date().toISOString()})),upstream('https://api.elections.kalshi.com/trade-api/v2/events/fee_changes?event_ticker='+encodeURIComponent(eventTicker)+'&limit=100').then(value=>({value,receivedAt:new Date().toISOString()})),weather().then(value=>({value,receivedAt:new Date().toISOString()}))]);
+ if(market.market?.ticker!==ticker||series.series?.ticker!=='KXHIGHAUS')throw Error('Unexpected source identity');
+ const input={market:market.market,series:series.series,book:book.value,side,quantity,book_at:book.receivedAt,fee_context:{eventTicker,receivedAt:seriesFees.receivedAt<eventFees.receivedAt?seriesFees.receivedAt:eventFees.receivedAt,seriesChanges:seriesFees.value,eventChanges:eventFees.value},current_forecast_issued_at:currentWeather.value.forecastUpdated,forecast_received_at:currentWeather.receivedAt};const {stdout}=await exec('python3',[fileURLToPath(new URL('./scripts/trading_validation.py',import.meta.url)),'--input-json',JSON.stringify(input)],{timeout:20000,maxBuffer:300000});res.end(stdout);
+ }catch{res.statusCode=502;res.end(JSON.stringify({error:'Verified-cost research quote unavailable',status:'BLOCKED',automaticTrading:false}));}return;}
  if(path==='/api/history'){res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');try{const {stdout}=await exec('python3',[fileURLToPath(new URL('./scripts/history_status.py',import.meta.url))],{timeout:15000,maxBuffer:100000});res.end(stdout);}catch{res.statusCode=503;res.end(JSON.stringify({error:'History status unavailable'}));}return;}
  if(path==='/api/weather'||path==='/api/markets'||path==='/api/series'||path.startsWith('/api/orderbook/')){
  res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');
