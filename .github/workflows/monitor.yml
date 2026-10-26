@@ -34,3 +34,37 @@ jobs:
             backups/manifest.json
           retention-days: 7
           if-no-files-found: error
+  verify-offsite-restore:
+    needs: monitor
+    if: always() && needs.monitor.result == 'success' && (github.event_name == 'workflow_dispatch' || github.event.schedule == '47 8 * * *')
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download the archive from GitHub artifact storage
+        uses: actions/download-artifact@v4
+        with:
+          name: verified-database-backup-${{ github.run_id }}
+          path: backups/offsite-restore-drill
+      - name: Verify archived checksum and perform isolated restore
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import sys
+          sys.path.insert(0, 'scripts')
+          from backup import digest, restore
+          directory = pathlib.Path('backups/offsite-restore-drill')
+          manifest = json.loads((directory/'manifest.json').read_text())
+          archive = directory/'snapshots.sqlite.gz'
+          if digest(archive) != manifest['sha256']:
+              raise SystemExit('Off-site artifact checksum mismatch')
+          result = restore(archive, directory/'restored.sqlite')
+          for key in ('snapshots', 'firstReceivedAt', 'lastReceivedAt'):
+              if result[key] != manifest[key]:
+                  raise SystemExit('Off-site restore metadata mismatch: '+key)
+          print(json.dumps({'offsiteRestoreVerified': True, **result}))
+          PY
